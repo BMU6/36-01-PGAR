@@ -5,17 +5,33 @@
   "main": "app.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "node --watch --conditions development src/app.ts",
+    "dev": "node --watch --conditions development --env-file=.env.development.local src/app.ts",
     "prebuild": "rm -rf dist",
     "build": "tsc",
     "prestart": "npm run build",
-    "start": "node dist/app.js"
+    "start": "node --env-file=.env.development.local dist/app.js"
   },
   "imports": {
-    "#utils": {
-      "development": "./src/utils/index.ts",
-      "default": "./dist/utils/index.js"
-    }
+    "#db": {
+      "development": "./src/db/index.ts",
+      "default": "./dist/db/index.js"
+    },
+    "#models": {
+      "development": "./src/models/index.ts",
+      "default": "./dist/models/index.js"
+    },
+    "#routes": {
+      "development": "./src/routes/index.ts",
+      "default": "./dist/routes/index.js"
+    }, 
+    "#controllers": {
+      "development": "./src/controllers/index.ts",
+      "default": "./dist/controllers/index.js"
+    },  
+    "#middleware": {
+      "development": "./src/middleware/index.ts",
+      "default": "./dist/middleware/index.js"
+    }  
   },
   "repository": {
     "type": "git",
