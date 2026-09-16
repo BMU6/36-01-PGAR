@@ -1,69 +1,120 @@
 import type { RequestHandler } from "express";
 import { User } from "#models";
+//import type { UserType } from "#types";
+import { userInputSchema } from "#schemas";
+import { z } from "zod";
+import type { Types } from "mongoose";
 
-
-// FR015 	
-// Response 	Exclude sensitive fields (e.g., password) from all API
-// Shaping  responses; normalize _id to id where returned.
-
-
-export const getUsers: RequestHandler = async (req, res) => {
-  // const { email, password } = req.body;
-
-  // if (!email || !password)
-  //   return res.status(400).send("Email and password are required!");
-
-  const users = await User.find();
-
-  res.status(200).json(users);
+type UserInputDTO = z.infer<typeof userInputSchema>;
+type UserOutputDTO = UserInputDTO & {
+  _id: InstanceType<typeof Types.ObjectId>;
+  createdAt: Date;
+  updatedAt: Date;
+};
+type IDParams = {
+  id: string;
 };
 
 
-export const createUser: RequestHandler = async (req, res) => {
-  const { email, password } = req.body;
-
-  if (!email || !password)
-    throw new Error("Email and password are required!",{cause:{status:400}});
-
-  const user = await User.create({ email, password });
-
-  res.status(201).json(user);
-};
-
-
-export const getUserById: RequestHandler = async (req, res) => {
-  const id = req.params.id;
-
-  if (!id) {
-    throw  new Error("Something went wrong", {cause:{status:500}});
+export const getUsers: RequestHandler<
+  unknown,
+  UserOutputDTO[] | { error: string }
+> = async (req, res) => {
+  try {
+    const users = await User.find();
+    res.json(users as UserOutputDTO[]);
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      res.status(500).json({ error: error.message });
+    } else {
+      res.status(500).json({ error: "An unknown error occurred" });
+    }
   }
-
-  const users = await User.find();
-
-  res.status(200).json(users);
 };
 
 
-export const updateUser: RequestHandler = async (req, res) => {
-  const id = req.params.id;
-  const { name, email} = req.body;
-
-  if (!email) {
-    throw  new Error("Something went wrong", {cause:{status:400}});
+export const createUser: RequestHandler<
+  unknown,
+  UserOutputDTO | { error: string },
+  UserInputDTO
+> = async (req, res) => {
+  try {
+    const newUser = await User.create(req.body satisfies UserInputDTO);
+    res.status(201).json(newUser as UserOutputDTO);
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      res.status(500).json({ error: error.message });
+    } else {
+      res.status(500).json({ error: "An unknown error occurred" });
+    }
   }
-  const user = await User.findByIdAndUpdate({ _id:id }, {name, email });
-
-  res.status(201).json(user);
 };
 
-export const deleteUser: RequestHandler = async (req, res) => {
-  const id = req.params.id;
 
-  if (!id) {
-    throw  new Error("Something went wrong", {cause:{status:500}});
+export const getUserById: RequestHandler<
+  IDParams,
+  UserOutputDTO | { error: string }
+> = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ error: "User not found" });
+    res.json(user);
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      res.status(500).json({ error: error.message });
+    } else {
+      res.status(500).json({ error: "An unknown error occurred" });
+    }
   }
+};
 
-  const user = await User.findByIdAndDelete({ _id:id });
 
-  res.status(200).json(user);
+export const updateUser: RequestHandler<
+  IDParams,
+  UserOutputDTO | { error: string },
+  UserInputDTO
+> = async (req, res) => {
+  try {
+    const {
+      body,
+      params: { id },
+    } = req;
+    const { name, email } = body;
+    if (!name || !email)
+      return res.status(400).json({ error: "name and email are required" });
+    const user = await User.findById(id);
+    if (!user) return res.status(404).json({ error: "User not found" });
+    user.name = name;
+    user.email = email;
+    await user.save();
+
+    res.json(user as UserOutputDTO);
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      res.status(500).json({ error: error.message });
+    } else {
+      res.status(500).json({ error: "An unknown error occurred" });
+    }
+  }
+};
+
+
+export const deleteUser: RequestHandler<
+  IDParams,
+  { message: string } | { error: string }
+> = async (req, res) => {
+  try {
+    const {
+      params: { id },
+    } = req;
+    const user = await User.findByIdAndDelete(id);
+    if (!user) return res.status(404).json({ error: "User not found" });
+    res.json({ message: "User deleted successfully" });
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      res.status(500).json({ error: error.message });
+    } else {
+      res.status(500).json({ error: "An unknown error occurred" });
+    }
+  }
 };

@@ -23,19 +23,23 @@
     "#routes": {
       "development": "./src/routes/index.ts",
       "default": "./dist/routes/index.js"
-    }, 
+    },
     "#controllers": {
       "development": "./src/controllers/index.ts",
       "default": "./dist/controllers/index.js"
-    },  
-    "#middleware": {
-      "development": "./src/middleware/index.ts",
-      "default": "./dist/middleware/index.js"
-    },  
+    },
+    "#middlewares": {
+      "development": "./src/middlewares/index.ts",
+      "default": "./dist/middlewares/index.js"
+    },
     "#schemas": {
       "development": "./src/schemas/index.ts",
       "default": "./dist/schemas/index.js"
-    }      
+    },
+    "#types": {
+      "development": "./src/types/index.ts",
+      "default": "./dist/types/index.js"
+    }
   },
   "repository": {
     "type": "git",
@@ -48,11 +52,13 @@
   },
   "homepage": "https://github.com/BMU6/36-01-PGAR#readme",
   "devDependencies": {
+    "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/node": "^26.4.1",
     "typescript": "^7.0.2"
   },
   "dependencies": {
+    "cors": "^2.8.6",
     "express": "^5.2.1",
     "formidable": "^3.5.4",
     "mongoose": "^9.9.5",
