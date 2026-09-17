@@ -16,48 +16,37 @@ type IDParams = {
   id: string;
 };
 
-
 export const getCategories: RequestHandler<
   unknown,
-  CategoryOutputDTO[] | { error: string }
-> = async (req, res) => {
+  CategoryOutputDTO[] | { message: string }
+> = async (req, res, next) => {
   try {
     const categories = await Category.find();
     res.json(categories as CategoryOutputDTO[]);
-  } catch (error: unknown) {
-    if (error instanceof Error) {
-      res.status(500).json({ error: error.message });
-    } else {
-      res.status(500).json({ error: "An unknown error occurred" });
-    }
+  } catch (error) {
+    next(error);
   }
 };
-
 
 export const createCategory: RequestHandler<
   unknown,
   CategoryOutputDTO | { message: string },
   CategoryInputDTO
-> = async (req, res) => {
+> = async (req, res, next) => {
   try {
     const { name } = req.body as CategoryInputDTO;
     const category = await Category.create({ name } satisfies CategoryType);
     res.status(201).json(category as CategoryOutputDTO);
-  } catch (error: unknown) {
-    if (error instanceof Error) {
-      res.status(400).json({ message: error.message });
-    } else {
-      res.status(500).json({ message: "An unknown error occurred" });
-    }
+  } catch (error) {
+    next(error);
   }
 };
-
 
 export const getCategoryById: RequestHandler<
   IDParams,
   CategoryOutputDTO | { message: string },
   CategoryInputDTO
-> = async (req, res) => {
+> = async (req, res, next) => {
   try {
     const {
       params: { id },
@@ -67,21 +56,16 @@ export const getCategoryById: RequestHandler<
       return res.status(404).json({ message: "Category not found" });
     }
     res.json(category as CategoryOutputDTO);
-  } catch (error: unknown) {
-    if (error instanceof Error) {
-      res.status(500).json({ message: error.message });
-    } else {
-      res.status(500).json({ message: "An unknown error occurred" });
-    }
+  } catch (error) {
+    next(error);
   }
 };
-
 
 export const updateCategory: RequestHandler<
   IDParams,
   CategoryOutputDTO | { message: string },
   CategoryInputDTO
-> = async (req, res) => {
+> = async (req, res, next) => {
   try {
     const {
       params: { id },
@@ -92,20 +76,15 @@ export const updateCategory: RequestHandler<
       return res.status(404).json({ message: "Category not found" });
     }
     res.json(category as CategoryOutputDTO);
-  } catch (error: unknown) {
-    if (error instanceof Error) {
-      res.status(500).json({ message: error.message });
-    } else {
-      res.status(500).json({ message: "An unknown error occurred" });
-    }
+  } catch (error) {
+    next(error);
   }
 };
-
 
 export const deleteCategory: RequestHandler<
   IDParams,
   { message: string }
-> = async (req, res) => {
+> = async (req, res, next) => {
   try {
     const {
       params: { id },
@@ -115,11 +94,7 @@ export const deleteCategory: RequestHandler<
       return res.status(404).json({ message: "Category not found" });
     }
     res.json({ message: "Category deleted successfully" });
-  } catch (error: unknown) {
-    if (error instanceof Error) {
-      res.status(500).json({ message: error.message });
-    } else {
-      res.status(500).json({ message: "An unknown error occurred" });
-    }
+  } catch (error) {
+    next(error);
   }
 };
