@@ -1,5 +1,4 @@
 import { Product, Category } from "#models";
-import type { ProductType } from "#types";
 import type { RequestHandler } from "express";
 import { Types } from "mongoose";
 import { productInputSchema } from "#schemas";
@@ -17,7 +16,7 @@ type IDParams = {
 
 export const getAllProducts: RequestHandler<
   unknown,
-  ProductOutputDTO[] | { error: string }
+  ProductOutputDTO[] | { message: string }
 > = async (req, res, next) => {
   try {
     const { category } = req.query;
@@ -28,11 +27,11 @@ export const getAllProducts: RequestHandler<
 
     const formattedProducts: ProductOutputDTO[] = (products as any[]).map(
       (product) => ({
-        _id: product._id,
         name: product.name,
         description: product.description,
         price: product.price,
-        category: product.category ? product.category.toString() : "",
+        category: toIdString(product.category),
+        _id: product._id,
         createdAt: product.createdAt,
         updatedAt: product.updatedAt,
       }),
@@ -44,12 +43,11 @@ export const getAllProducts: RequestHandler<
   }
 };
 
-
 export const createProduct: RequestHandler<
   unknown,
-  ProductOutputDTO | { error: string },
+  ProductOutputDTO | { message: string },
   ProductInputDTO
-> = async (req, res) => {
+> = async (req, res, next) => {
   try {
     const { name, description, price, category } = req.body;
 
@@ -57,7 +55,7 @@ export const createProduct: RequestHandler<
     if (!categoryExists) {
       return res
         .status(400)
-        .json({ error: "Invalid category. Category does not exist." });
+        .json({ message: "Invalid category. Category does not exist." });
     }
 
     const product = await Product.create({
@@ -81,17 +79,20 @@ export const createProduct: RequestHandler<
 
     return res.status(201).json(formattedProduct);
   } catch (error) {
-    if (error instanceof Error) {
-      return res.status(500).json({ error: error.message });
-    }
-    return res.status(500).json({ error: "Error creating product" });
+    next(error);
   }
 };
 
+function toIdString(value: any): string {
+  if (value && typeof value === "object" && "_id" in value) {
+    return value._id.toString();
+  }
+  return value?.toString() || "";
+}
 
 export const getProductById: RequestHandler<
   IDParams,
-  ProductOutputDTO | { error: string },
+  ProductOutputDTO | { message: string },
   ProductInputDTO
 > = async (req, res, next) => {
   try {
@@ -102,14 +103,14 @@ export const getProductById: RequestHandler<
     const product = await Product.findById(id).populate("category").lean();
 
     if (!product) {
-      return res.status(404).json({ error: "Product not found" });
+      return res.status(404).json({ message: "Product not found" });
     }
 
     const productDTO: ProductOutputDTO = {
       name: product.name,
       description: product.description,
       price: product.price,
-      category: product.category.toString(),
+      category: toIdString(product.category),
       _id: product._id,
       createdAt: product.createdAt,
       updatedAt: product.updatedAt,
@@ -121,10 +122,9 @@ export const getProductById: RequestHandler<
   }
 };
 
-
 export const updateProduct: RequestHandler<
   IDParams,
-  ProductOutputDTO | { error: string },
+  ProductOutputDTO | { message: string },
   ProductInputDTO
 > = async (req, res, next) => {
   try {
@@ -138,7 +138,7 @@ export const updateProduct: RequestHandler<
       if (!categoryExists) {
         return res
           .status(400)
-          .json({ error: "Invalid category. Category does not exist." });
+          .json({ message: "Invalid category. Category does not exist." });
       }
     }
 
@@ -147,14 +147,14 @@ export const updateProduct: RequestHandler<
     }).lean();
 
     if (!product) {
-      return res.status(404).json({ error: "Product not found" });
+      return res.status(404).json({ message: "Product not found" });
     }
 
     const productDTO: ProductOutputDTO = {
       name: product.name,
       description: product.description,
       price: product.price,
-      category: product.category.toString(),
+      category: toIdString(product.category),
       _id: product._id,
       createdAt: product.createdAt,
       updatedAt: product.updatedAt,
@@ -165,7 +165,6 @@ export const updateProduct: RequestHandler<
     next(error);
   }
 };
-
 
 export const deleteProduct: RequestHandler<
   IDParams,
